@@ -55,15 +55,15 @@ RUN make -j $(getconf _NPROCESSORS_ONLN)
 RUN install bin/fluent-bit /fluent-bit/bin/
 
 # Configuration files
-COPY conf/fluent-bit.conf \
-     conf/parsers.conf \
-     conf/parsers_ambassador.conf \
-     conf/parsers_java.conf \
-     conf/parsers_extra.conf \
-     conf/parsers_openstack.conf \
-     conf/parsers_cinder.conf \
-     conf/plugins.conf \
-     /fluent-bit/etc/
+RUN cp -f /tmp/fluent-bit/conf/fluent-bit.conf \
+    /tmp/fluent-bit/conf/parsers.conf \
+    /tmp/fluent-bit/onf/parsers_ambassador.conf \
+    /tmp/fluent-bit/conf/parsers_java.conf \
+    /tmp/fluent-bit/conf/parsers_extra.conf \
+    /tmp/fluent-bit/conf/parsers_openstack.conf \
+    /tmp/fluent-bit/conf/parsers_cinder.conf \
+    /tmp/fluent-bit/conf/plugins.conf \
+    /fluent-bit/etc/
 
 FROM builder as test
 WORKDIR /tmp/fluent-bit/build/
