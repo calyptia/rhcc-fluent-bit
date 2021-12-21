@@ -57,7 +57,7 @@ RUN install bin/fluent-bit /fluent-bit/bin/
 # Configuration files
 RUN cp -f /tmp/fluent-bit/conf/fluent-bit.conf \
     /tmp/fluent-bit/conf/parsers.conf \
-    /tmp/fluent-bit/onf/parsers_ambassador.conf \
+    /tmp/fluent-bit/conf/parsers_ambassador.conf \
     /tmp/fluent-bit/conf/parsers_java.conf \
     /tmp/fluent-bit/conf/parsers_extra.conf \
     /tmp/fluent-bit/conf/parsers_openstack.conf \
