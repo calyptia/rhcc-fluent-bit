@@ -15,9 +15,11 @@ jobs:
     name: RHCC - Build multi-arch UBI 8 container images
     runs-on: ubuntu-latest
     environment: rhcc
+    outputs:
+      image: ${{ steps.meta.outputs.tags }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v1
@@ -63,3 +65,169 @@ jobs:
         push: true
         load: false
         target: production
+
+  calyptia-rhcc-test-dev-sandbox:
+    runs-on: ubuntu-latest
+    needs: calyptia-rhcc-deploy-staging-images
+    env:
+      NAMESPACE: fluent-bit-logging
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Checkout examples repo to run tests
+        uses: actions/checkout@v3
+        with:
+          repo: https://github.com/calyptia/openshift-fluent-bit-examples.git
+          path: openshift-examples
+
+      # Log into the OpenShift cluster using the secrets configured in the repository settings.
+      # The GitHub Ubuntu runners have oc pre-installed.
+      # If you're not using those runners, be sure to check out https://github.com/redhat-actions/openshift-tools-installer.
+      - name: OpenShift login
+        uses: redhat-actions/oc-login@v1
+        with:
+          openshift_server_url: ${{ secrets.OPENSHIFT_URL }}
+          openshift_token: ${{ secrets.OPENSHIFT_TOKEN }}
+          # openshift_username:
+          # openshift_password:
+          insecure_skip_tls_verify: true
+          namespace: ${{ env.NAMESPACE }}
+
+      - name: Deploy Helm chart with our image
+        run: |
+          IMAGE_REPOSITORY=${IMAGE%%:*}
+          IMAGE_TAG=${IMAGE##*:}
+          echo "Split full image name ($IMAGE) into repository ($IMAGE_REPOSITORY) and tag ($IMAGE_TAG)"
+          openshift-examples/grafana-cloud/deploy-helm.sh --set image.repository="$IMAGE_REPOSITORY",image.tag="$IMAGE_TAG"
+        env:
+          GRAFANA_CLOUD_PROM_USERNAME: ${{ secrets.GRAFANA_CLOUD_PROM_USERNAME }}
+          GRAFANA_CLOUD_LOKI_USERNAME: ${{ secrets.GRAFANA_CLOUD_LOKI_USERNAME }}
+          GRAFANA_CLOUD_APIKEY: ${{ secrets.GRAFANA_CLOUD_APIKEY }}
+          GRAFANA_CLOUD_PROM_URL: prometheus-${{ secrets.GRAFANA_CLOUD_PROM_URL }}.grafana.net
+          GRAFANA_CLOUD_LOKI_URL: logs-${{ secrets.GRAFANA_CLOUD_LOKI_URL }}.grafana.net
+          IMAGE: ${{ needs.calyptia-rhcc-deploy-staging-images.outputs.image }}
+        shell: bash
+
+      - name: Check logs and run for a while
+        timeout-minutes: 2
+        continue-on-error: true
+        run: |
+          kubectl logs --namespace fluent-bit-logging \
+            $(kubectl get pods --namespace fluent-bit-logging \
+              -l "app.kubernetes.io/name=fluent-bit,app.kubernetes.io/instance=fluent-bit" -o jsonpath="{.items[0].metadata.name}")
+          sleep 60
+          kubectl logs --namespace fluent-bit-logging \
+            $(kubectl get pods --namespace fluent-bit-logging \
+              -l "app.kubernetes.io/name=fluent-bit,app.kubernetes.io/instance=fluent-bit" -o jsonpath="{.items[0].metadata.name}")
+
+      - name: Error debug
+        if: failure()
+        run: |
+          kubectl get namespace
+          kubectl --namespace fluent-bit-logging describe all
+
+      - name: Tear down
+        if: always()
+        continue-on-error: true
+        run: |
+          helm delete -n ${{ env.NAMESPACE }} fluent-bit
+          oc delete all,secret -n ${{ env.NAMESPACE }}
+        shell: bash
+
+  calyptia-rhcc-test-crc:
+    # Unfortunately no nested virtualisation support in Github actions for Linux
+    # The only environment that does support it is MacOS but it is too old to install CRC
+    # and CRC uses a guided installer there.
+    # Instead we rely on dev sandbox to do the work but this requires a regular renewal and token update.
+    if: false
+    name: Use Openshift CRC to test images
+    runs-on: ubuntu-latest
+    needs: calyptia-rhcc-deploy-staging-images
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up prerequisites
+        run: |
+          sudo apt-get install -y wget tar qemu-kvm libvirt-daemon libvirt-daemon-system network-manager
+        shell: bash
+
+      - uses: azure/setup-helm@v1
+      - uses: azure/setup-kubectl@v2
+
+      - name: Install CRC
+        run: |
+          wget https://developers.redhat.com/content-gateway/rest/mirror/pub/openshift-v4/clients/crc/latest/crc-linux-amd64.tar.xz
+          tar -xvf crc-linux-amd64.tar.xz --strip-components=1
+          sudo mv crc /usr/local/bin/
+        shell: bash
+
+      - name: Setup CRC
+        timeout-minutes: 15
+        run: |
+          echo -e "$CRC_PULL_SECRET" > /tmp/rhcc-pull-secret.sec
+          crc config set consent-telemetry no
+          crc config set pull-secret-file /tmp/rhcc-pull-secret.sec
+          crc setup --log-level debug
+        shell: bash
+        env:
+          CRC_PULL_SECRET: ${{ secrets.CRC_PULL_SECRET }}
+
+      - name: Start CRC
+        timeout-minutes: 30
+        run: crc start --log-level debug
+        shell: bash
+
+      - name: Checkout examples repo to help
+        uses: actions/checkout@v3
+        with:
+          repo: https://github.com/calyptia/openshift-fluent-bit-examples.git
+          path: openshift-examples
+
+      - name: Deploy Helm chart with our image
+        run: |
+          IMAGE_REPOSITORY=${IMAGE%%:*}
+          IMAGE_TAG=${IMAGE##*:}
+          echo "Split full image name ($IMAGE) into repository ($IMAGE_REPOSITORY) and tag ($IMAGE_TAG)"
+          openshift-examples/grafana-cloud/deploy-helm.sh
+        env:
+          GRAFANA_CLOUD_PROM_USERNAME: ${{ secrets.GRAFANA_CLOUD_PROM_USERNAME }}
+          GRAFANA_CLOUD_LOKI_USERNAME: ${{ secrets.GRAFANA_CLOUD_LOKI_USERNAME }}
+          GRAFANA_CLOUD_APIKEY: ${{ secrets.GRAFANA_CLOUD_APIKEY }}
+          GRAFANA_CLOUD_PROM_URL: prometheus-${{ secrets.GRAFANA_CLOUD_PROM_URL }}.grafana.net
+          GRAFANA_CLOUD_LOKI_URL: logs-${{ secrets.GRAFANA_CLOUD_LOKI_URL }}.grafana.net
+        shell: bash
+
+      - name: Check logs and run for a while
+        timeout-minutes: 2
+        continue-on-error: true
+        run: |
+          kubectl logs --namespace fluent-bit-logging \
+            $(kubectl get pods --namespace fluent-bit-logging \
+              -l "app.kubernetes.io/name=fluent-bit,app.kubernetes.io/instance=fluent-bit" -o jsonpath="{.items[0].metadata.name}")
+          sleep 60
+          kubectl logs --namespace fluent-bit-logging \
+            $(kubectl get pods --namespace fluent-bit-logging \
+              -l "app.kubernetes.io/name=fluent-bit,app.kubernetes.io/instance=fluent-bit" -o jsonpath="{.items[0].metadata.name}")
+
+      - name: Error debug
+        if: failure()
+        run: |
+          kubectl get namespace
+          kubectl --namespace fluent-bit-logging describe all
+
+      - name: Remove CRC
+        if: always()
+        run: crc delete -f
