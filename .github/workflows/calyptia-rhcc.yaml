@@ -10,6 +10,10 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
+concurrency:
+  group: rhcc-workflow
+  cancel-in-progress: false
+
 jobs:
   calyptia-rhcc-deploy-staging-images:
     name: RHCC - Build multi-arch UBI 8 container images
@@ -51,7 +55,7 @@ jobs:
       with:
         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         tags: |
-          raw,ubi8-${{ inputs.version }}
+          raw,ubi8-${{ github.sha }}
           raw,ubi8
 
     - name: Build the production image
@@ -99,10 +103,7 @@ jobs:
 
       - name: Deploy Helm chart with our image
         run: |
-          IMAGE_REPOSITORY=${IMAGE%%:*}
-          IMAGE_TAG=${IMAGE##*:}
-          echo "Split full image name ($IMAGE) into repository ($IMAGE_REPOSITORY) and tag ($IMAGE_TAG)"
-          openshift-examples/grafana-cloud/deploy-helm.sh --set image.repository="$IMAGE_REPOSITORY",image.tag="$IMAGE_TAG"
+          openshift-examples/grafana-cloud/deploy-helm.sh --set image.repository="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}",image.tag="ubi8"
         env:
           GRAFANA_CLOUD_PROM_USERNAME: ${{ secrets.GRAFANA_CLOUD_PROM_USERNAME }}
           GRAFANA_CLOUD_LOKI_USERNAME: ${{ secrets.GRAFANA_CLOUD_LOKI_USERNAME }}
