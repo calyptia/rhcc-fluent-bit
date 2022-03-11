@@ -27,7 +27,7 @@ WORKDIR /source
 RUN git clone -b "$FLUENT_BIT_VER" https://github.com/fluent/fluent-bit.git
 
 # Copy any local source files as needed
-COPY calyptia/ubi8/patches/ /source/fluent-bit/
+COPY patches/ /source/fluent-bit/
 
 WORKDIR /source/fluent-bit/build/
 # IPv6 tests dependent on docker configuration and support so disable
