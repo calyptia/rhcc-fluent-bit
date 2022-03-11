@@ -74,8 +74,10 @@ jobs:
     # Unfortunately no nested virtualisation support in Github actions for Linux
     # The only environment that does support it is MacOS but it is too old to install CRC
     # and CRC uses a guided installer there.
-    # Instead we rely on dev sandbox to do the work but this requires a regular renewal and token update.
+    # We also cannot use dev sandbox as we need to modify security constraints at a cluster level.
     # https://developers.redhat.com/developer-sandbox/get-started
+    # The only option therefore is a cluster we have full control over.
+    if: false
     runs-on: ubuntu-latest
     needs: calyptia-rhcc-deploy-staging-images
     env:
