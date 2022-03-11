@@ -103,7 +103,7 @@ jobs:
 
       - name: Deploy Helm chart with our image
         run: |
-          openshift-examples/grafana-cloud/deploy-helm.sh --set image.repository="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}",image.tag="ubi8"
+          openshift-examples/grafana-cloud/deploy-helm.sh --atomic --set image.repository="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}",image.tag="ubi8"
         env:
           GRAFANA_CLOUD_PROM_USERNAME: ${{ secrets.GRAFANA_CLOUD_PROM_USERNAME }}
           GRAFANA_CLOUD_LOKI_USERNAME: ${{ secrets.GRAFANA_CLOUD_LOKI_USERNAME }}
@@ -117,19 +117,20 @@ jobs:
         timeout-minutes: 2
         continue-on-error: true
         run: |
-          kubectl logs --namespace fluent-bit-logging \
-            $(kubectl get pods --namespace fluent-bit-logging \
+          kubectl logs --namespace $NAMESPACE \
+            $(kubectl get pods --namespace $NAMESPACE \
               -l "app.kubernetes.io/name=fluent-bit,app.kubernetes.io/instance=fluent-bit" -o jsonpath="{.items[0].metadata.name}")
           sleep 60
           kubectl logs --namespace fluent-bit-logging \
-            $(kubectl get pods --namespace fluent-bit-logging \
+            $(kubectl get pods --namespace $NAMESPACE \
               -l "app.kubernetes.io/name=fluent-bit,app.kubernetes.io/instance=fluent-bit" -o jsonpath="{.items[0].metadata.name}")
 
       - name: Error debug
         if: failure()
         run: |
           kubectl get namespace
-          kubectl --namespace fluent-bit-logging describe all
+          kubectl --namespace $NAMESPACE describe all
+        shell: bash
 
       - name: Tear down
         if: always()
