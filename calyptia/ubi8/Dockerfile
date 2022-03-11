@@ -1,4 +1,4 @@
-ARG FLUENT_BIT_VER=1.9.0
+ARG FLUENT_BIT_VER=v1.9.0
 
 FROM registry.access.redhat.com/ubi8/ubi:8.5 as builder
 # hadolint ignore=DL3041
@@ -20,6 +20,7 @@ WORKDIR /flex/flex-${FLEX_VER}/
 RUN ./configure && make && make install
 
 # Fluent Bit version
+ARG FLUENT_BIT_VER
 ENV FLUENTBIT_VERSION=$FLUENT_BIT_VER
 
 # Note we use the upstream source directly here
@@ -72,7 +73,7 @@ RUN make test || true
 # The release image now
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.5 as production
 RUN microdnf update && microdnf install -y openssl libpq systemd-libs shadow-utils && microdnf clean all
-
+ARG FLUENT_BIT_VER
 ENV FLUENTBIT_VERSION=$FLUENT_BIT_VER
 
 # https://redhat-connect.gitbook.io/partner-guide-for-red-hat-openshift-and-container/program-on-boarding/technical-prerequisites#dockerfile-requirements
