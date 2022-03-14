@@ -18,7 +18,7 @@ jobs:
           sudo apt-get install --yes docker.io containerd runc
           sudo systemctl unmask docker && sudo systemctl start docker
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Build a docker image for master branch
         run: |
           DOCKER_BUILDKIT=1 docker build --no-cache -f ./dockerfiles/Dockerfile.${{ env.arch }}-${{ matrix.tag }} -t ${{ env.dockerhub_organization }}/fluent-bit:${{ env.arch }}-${{ matrix.tag }} .

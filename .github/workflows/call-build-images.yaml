@@ -46,7 +46,7 @@ jobs:
           #   suffix: x86_64-debug
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v1
@@ -94,7 +94,7 @@ jobs:
         suffix: [ x86_64, arm32v7, arm64v8 ]
     steps:
       - name: Checkout code for ignore list
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Run Trivy and Dockle scans
         uses: azure/container-scan@v0

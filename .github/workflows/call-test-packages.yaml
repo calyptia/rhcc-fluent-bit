@@ -29,7 +29,7 @@ jobs:
         distro: [ amazonlinux, centos7, debian10, ubuntu1804, ubuntu2004 ]
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Get the version
       id: get_version
