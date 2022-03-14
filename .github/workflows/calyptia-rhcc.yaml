@@ -15,9 +15,11 @@ jobs:
     name: RHCC - Build multi-arch UBI 8 container images
     runs-on: ubuntu-latest
     environment: rhcc
+    outputs:
+      image: ${{ steps.meta.outputs.tags }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v1
@@ -49,7 +51,7 @@ jobs:
       with:
         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         tags: |
-          raw,ubi8-${{ inputs.version }}
+          raw,ubi8-${{ github.sha }}
           raw,ubi8
 
     - name: Build the production image
