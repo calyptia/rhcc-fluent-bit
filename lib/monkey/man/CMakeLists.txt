@@ -1,3 +1,0 @@
-install(FILES
-  "monkey.1"
-  DESTINATION "${CMAKE_INSTALL_MANDIR}/man1" COMPONENT doc)
