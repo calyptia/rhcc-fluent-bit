@@ -1,1 +1,0 @@
-please go to https://github.com/fluent/fluent-bit-docs/blob/master/CONTRIBUTING.md for more details.

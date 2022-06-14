@@ -1,7 +1,0 @@
-{
-    "metadata": {
-        "annotations": {
-            "fluentbit.io/exclude": "neither-true-nor-false"
-        }
-    }
-}
