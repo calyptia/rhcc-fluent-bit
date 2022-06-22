@@ -1,8 +1,8 @@
-ARG FLUENT_BIT_VER=v1.9.4
+ARG FLUENT_BIT_VER=v1.9.5
 
 FROM registry.access.redhat.com/ubi8/ubi:8.6 as builder
 # hadolint ignore=DL3041
-RUN dnf update -y && dnf install -y cmake3 curl diffutils gcc gcc-c++ git libpq-devel m4 make openssl-devel systemd-devel tar unzip && dnf clean all
+RUN dnf update -y && dnf install -y cmake3 curl diffutils gcc gcc-c++ git libpq-devel m4 make openssl-devel systemd-devel tar unzip libyaml-devel && dnf clean all
 
 # Provide the dependencies for record accessor built from source
 ARG BISON_VER=3.7
@@ -65,16 +65,11 @@ RUN cp -f conf/fluent-bit.conf \
     conf/plugins.conf \
     /fluent-bit/etc/
 
-# Primarily to capture test output rather than verify
-FROM builder as test
-WORKDIR /source/build/
-RUN make test || true
-
 # The release image now
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.6 as production
 RUN microdnf update && microdnf install -y openssl libpq systemd-libs shadow-utils && microdnf clean all
 ARG FLUENT_BIT_VER
-ENV FLUENTBIT_VERSION=$FLUENT_BIT_VER
+ENV FLUENT_BIT_VERSION=$FLUENT_BIT_VER
 
 # https://redhat-connect.gitbook.io/partner-guide-for-red-hat-openshift-and-container/program-on-boarding/technical-prerequisites#dockerfile-requirements
 # The following labels must exist: name, maintainer, vendor, version, release, summary & description.
