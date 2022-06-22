@@ -2,7 +2,7 @@ ARG FLUENT_BIT_VER=v1.9.5
 
 FROM registry.access.redhat.com/ubi8/ubi:8.6 as builder
 # hadolint ignore=DL3041
-RUN dnf update -y && dnf install -y cmake3 curl diffutils gcc gcc-c++ git libpq-devel m4 make openssl-devel systemd-devel tar unzip && dnf clean all
+RUN dnf update -y && dnf install -y cmake3 curl diffutils gcc gcc-c++ git libpq-devel m4 make openssl-devel systemd-devel tar unzip libyaml-devel && dnf clean all
 
 # Provide the dependencies for record accessor built from source
 ARG BISON_VER=3.7
