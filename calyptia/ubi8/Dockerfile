@@ -1,4 +1,4 @@
-ARG FLUENT_BIT_VER=v1.9.5
+ARG FLUENT_BIT_VER=v1.9.6
 
 FROM registry.access.redhat.com/ubi8/ubi:8.6 as builder
 # hadolint ignore=DL3041
