@@ -2,7 +2,7 @@ ARG FLUENT_BIT_VER=v1.9.8
 
 FROM registry.access.redhat.com/ubi9/ubi:9.0.0 as builder
 # hadolint ignore=DL3041
-RUN dnf update -y && dnf install -y cmake3 curl diffutils gcc gcc-c++ git libpq-devel m4 make openssl-devel systemd-devel tar unzip libyaml-devel && dnf clean all
+RUN dnf update -y && dnf install -y cmake3 diffutils gcc gcc-c++ git libpq-devel m4 make openssl-devel systemd-devel tar unzip libyaml-devel && dnf clean all
 
 # Provide the dependencies for record accessor built from source
 ARG BISON_VER=3.7
@@ -30,6 +30,9 @@ RUN git clone -b "$FLUENT_BIT_VER" https://github.com/fluent/fluent-bit.git
 # Copy any local source files as needed
 COPY patches/ /source/fluent-bit/
 
+# Enable tests if required
+ARG ENABLE_TESTS=Off
+
 WORKDIR /source/fluent-bit/build/
 # IPv6 tests dependent on docker configuration and support so disable
 RUN sed -i '/{ "ipv6_client_server", test_ipv6_client_server},/d' ../tests/internal/network.c
@@ -44,8 +47,8 @@ RUN cmake -DFLB_RELEASE=On \
           -DFLB_IN_SYSTEMD=On \
           -DFLB_OUT_KAFKA=On \
           -DFLB_OUT_PGSQL=On \
-          -DFLB_TESTS_INTERNAL=On \
-          -DFLB_TESTS_RUNTIME=On \
+          -DFLB_TESTS_INTERNAL=${ENABLE_TESTS} \
+          -DFLB_TESTS_RUNTIME=${ENABLE_TESTS} \
           ..
 # Build
 RUN make -j "$(getconf _NPROCESSORS_ONLN)"
