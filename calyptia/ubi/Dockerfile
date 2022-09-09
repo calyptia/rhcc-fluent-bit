@@ -1,6 +1,6 @@
-ARG FLUENT_BIT_VER=v1.9.6
+ARG FLUENT_BIT_VER=v1.9.8
 
-FROM registry.access.redhat.com/ubi8/ubi:8.6 as builder
+FROM registry.access.redhat.com/ubi9/ubi:9.0.0 as builder
 # hadolint ignore=DL3041
 RUN dnf update -y && dnf install -y cmake3 curl diffutils gcc gcc-c++ git libpq-devel m4 make openssl-devel systemd-devel tar unzip libyaml-devel && dnf clean all
 
@@ -66,7 +66,7 @@ RUN cp -f conf/fluent-bit.conf \
     /fluent-bit/etc/
 
 # The release image now
-FROM registry.access.redhat.com/ubi8/ubi-minimal:8.6 as production
+FROM registry.access.redhat.com/ubi9/ubi-minimal:9.0.0 as production
 RUN microdnf update && microdnf install -y openssl libpq systemd-libs shadow-utils && microdnf clean all
 ARG FLUENT_BIT_VER
 ENV FLUENT_BIT_VERSION=$FLUENT_BIT_VER
@@ -76,7 +76,7 @@ ENV FLUENT_BIT_VERSION=$FLUENT_BIT_VER
 LABEL name="calyptia/fluent-bit" \
       vendor="calyptia" \
       maintainer="Patrick Stephens <pat@calyptia.com>" \
-      version="ubi8-${FLUENT_BIT_VER}" \
+      version="ubi9-${FLUENT_BIT_VER}" \
       release="${FLUENT_BIT_VER}" \
       summary="Calyptia Fluent Bit ${FLUENT_BIT_VER}" \
       description="Calyptia Fluent Bit based on upstream Fluent Bit ${FLUENT_BIT_VER}"

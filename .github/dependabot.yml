@@ -7,3 +7,9 @@ updates:
       interval: "daily"
     commit-message:
       prefix: "workflows: "
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    commit-message:
+      prefix: "dockerfile: "
