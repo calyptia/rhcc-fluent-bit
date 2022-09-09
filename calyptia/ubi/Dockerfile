@@ -70,7 +70,7 @@ RUN cp -f conf/fluent-bit.conf \
 
 # The release image now
 FROM registry.access.redhat.com/ubi9/ubi-minimal:9.0.0 as production
-RUN microdnf update && microdnf install -y openssl libpq systemd-libs shadow-utils && microdnf clean all
+RUN microdnf update -y && microdnf install -y openssl libpq systemd-libs shadow-utils && microdnf clean all
 ARG FLUENT_BIT_VER
 ENV FLUENT_BIT_VERSION=$FLUENT_BIT_VER
 
