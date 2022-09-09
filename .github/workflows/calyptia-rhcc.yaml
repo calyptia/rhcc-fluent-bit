@@ -38,8 +38,8 @@ jobs:
       continue-on-error: true
       uses: docker/build-push-action@v3
       with:
-        file: ./calyptia/ubi8/Dockerfile
-        context: ./calyptia/ubi8/
+        file: ./calyptia/ubi/Dockerfile
+        context: ./calyptia/ubi/
         platforms: linux/amd64
         push: false
         load: false
@@ -57,8 +57,8 @@ jobs:
     - name: Build the production image
       uses: docker/build-push-action@v3
       with:
-        file: ./calyptia/ubi8/Dockerfile
-        context: ./calyptia/ubi8/
+        file: ./calyptia/ubi/Dockerfile
+        context: ./calyptia/ubi/
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         platforms: linux/amd64, linux/arm64
