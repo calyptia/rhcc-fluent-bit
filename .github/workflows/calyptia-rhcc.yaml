@@ -34,25 +34,14 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Build and run the tests
-      continue-on-error: true
-      uses: docker/build-push-action@v3
-      with:
-        file: ./calyptia/ubi/Dockerfile
-        context: ./calyptia/ubi/
-        platforms: linux/amd64
-        push: false
-        load: false
-        target: test
-
     - name: Extract metadata from Github
       id: meta
       uses: docker/metadata-action@v4
       with:
         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         tags: |
-          raw,ubi8-${{ github.sha }}
-          raw,ubi8
+          raw,ubi9-${{ github.sha }}
+          raw,ubi9
 
     - name: Build the production image
       uses: docker/build-push-action@v3
