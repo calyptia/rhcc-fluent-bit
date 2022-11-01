@@ -1,0 +1,65 @@
+---
+name: Check for upstream releases to trigger update locally
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+jobs:
+  get-versions:
+    name: Check upstream Fluent Bit and current branch
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      new-version: ${{ steps.fluent-bit-release-version.outputs.release }}
+      old-version: ${{ steps.calyptia-versions.outputs.fluent-bit-version }}
+    steps:
+      - id: fluent-bit-release-version
+        uses: pozetroninc/github-action-get-latest-release@master
+        with:
+          owner: fluent
+          repo: fluent-bit
+          excludes: prerelease, draft
+
+      - uses: actions/checkout@v3
+
+      - name: Get the current versions
+        # Look for the default line in the Dockerfile
+        id: calyptia-versions
+        run: |
+          DOCKERFILE_OSS_VERSION=$(grep "ARG FLUENT_BIT_VER" calyptia/ubi/Dockerfile | cut -d '=' -s -f 2 -)
+          echo "Using OSS version: $DOCKERFILE_OSS_VERSION"
+          echo "::set-output name=fluent-bit-version::$DOCKERFILE_OSS_VERSION"
+        shell: bash
+
+  set-versions:
+    name: Run update and create PR
+    needs:
+      - get-versions
+    if: needs.get-versions.outputs.new-version != needs.get-versions.outputs.old-version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - run: |
+          echo "${{ needs.get-versions.outputs.new-version }} != ${{ needs.get-versions.outputs.old-version }}"
+        shell: bash
+
+      - uses: actions/checkout@v3
+
+      - name: Run update version script
+        run: |
+          sed -i 's/ARG FLUENT_BIT_VER=${{ needs.get-versions.outputs.old-version }}/ARG FLUENT_BIT_VER=${{ needs.get-versions.outputs.new-version }}/g' calyptia/ubi/Dockerfile
+        shell: bash
+
+      - name: Generate PR
+        uses: peter-evans/create-pull-request@v4
+        with:
+          commit-message: 'upstream: update upstream Fluent Bit release'
+          signoff: true
+          branch: ci_update_upstream
+          delete-branch: true
+          title: 'upstream: update upstream Fluent Bit release'
+          # We need workflows permission so have to use the CI_PAT
+          token: ${{ secrets.CI_PAT }}

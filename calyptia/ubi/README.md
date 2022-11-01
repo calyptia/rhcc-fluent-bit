@@ -1,4 +1,6 @@
-The Redhat Container Catalog image for Fluent Bit provided by [Calyptia](https://calyptia.com/).
+# UBI image
+
+The Red Hat Container Catalog image for Fluent Bit provided by [Calyptia](https://calyptia.com/).
 
 This is the vanilla upstream source code just built and maintained by Calyptia.
 

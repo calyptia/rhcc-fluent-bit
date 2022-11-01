@@ -1,4 +1,4 @@
-ARG FLUENT_BIT_VER=v1.9.8
+ARG FLUENT_BIT_VER=v2.0.3
 
 FROM registry.access.redhat.com/ubi9/ubi:9.0.0 as builder
 # hadolint ignore=DL3041
@@ -34,22 +34,25 @@ COPY patches/ /source/fluent-bit/
 ARG ENABLE_TESTS=Off
 
 WORKDIR /source/fluent-bit/build/
+
 # IPv6 tests dependent on docker configuration and support so disable
 RUN sed -i '/{ "ipv6_client_server", test_ipv6_client_server},/d' ../tests/internal/network.c
+
 # Separate layers now for configure and build to allow local caching
+# hadolint ignore=DL3059
 RUN cmake -DFLB_RELEASE=On \
-          -DFLB_TRACE=Off \
-          -DFLB_JEMALLOC=On \
-          -DFLB_TLS=On \
-          -DFLB_SHARED_LIB=Off \
-          -DFLB_EXAMPLES=Off \
-          -DFLB_HTTP_SERVER=On \
-          -DFLB_IN_SYSTEMD=On \
-          -DFLB_OUT_KAFKA=On \
-          -DFLB_OUT_PGSQL=On \
-          -DFLB_TESTS_INTERNAL=${ENABLE_TESTS} \
-          -DFLB_TESTS_RUNTIME=${ENABLE_TESTS} \
-          ..
+    -DFLB_TRACE=Off \
+    -DFLB_JEMALLOC=On \
+    -DFLB_TLS=On \
+    -DFLB_SHARED_LIB=Off \
+    -DFLB_EXAMPLES=Off \
+    -DFLB_HTTP_SERVER=On \
+    -DFLB_IN_SYSTEMD=On \
+    -DFLB_OUT_KAFKA=On \
+    -DFLB_OUT_PGSQL=On \
+    -DFLB_TESTS_INTERNAL=${ENABLE_TESTS} \
+    -DFLB_TESTS_RUNTIME=${ENABLE_TESTS} \
+    ..
 # Build
 RUN make -j "$(getconf _NPROCESSORS_ONLN)"
 # Install and create all necessary directories
@@ -70,6 +73,7 @@ RUN cp -f conf/fluent-bit.conf \
 
 # The release image now
 FROM registry.access.redhat.com/ubi9/ubi-minimal:9.0.0 as production
+# hadolint ignore=DL3041
 RUN microdnf update -y && microdnf install -y openssl libpq systemd-libs shadow-utils && microdnf clean all
 ARG FLUENT_BIT_VER
 ENV FLUENT_BIT_VERSION=$FLUENT_BIT_VER
@@ -77,12 +81,12 @@ ENV FLUENT_BIT_VERSION=$FLUENT_BIT_VER
 # https://redhat-connect.gitbook.io/partner-guide-for-red-hat-openshift-and-container/program-on-boarding/technical-prerequisites#dockerfile-requirements
 # The following labels must exist: name, maintainer, vendor, version, release, summary & description.
 LABEL name="calyptia/fluent-bit" \
-      vendor="calyptia" \
-      maintainer="Patrick Stephens <pat@calyptia.com>" \
-      version="ubi9-${FLUENT_BIT_VER}" \
-      release="${FLUENT_BIT_VER}" \
-      summary="Calyptia Fluent Bit ${FLUENT_BIT_VER}" \
-      description="Calyptia Fluent Bit based on upstream Fluent Bit ${FLUENT_BIT_VER}"
+    vendor="calyptia" \
+    maintainer="Patrick Stephens <hello@calyptia.com>" \
+    version="ubi9-${FLUENT_BIT_VER}" \
+    release="${FLUENT_BIT_VER}" \
+    summary="Calyptia Fluent Bit ${FLUENT_BIT_VER}" \
+    description="Calyptia Fluent Bit for Red Hat Container Catalog based on upstream Fluent Bit ${FLUENT_BIT_VER}"
 
 EXPOSE 2020
 
