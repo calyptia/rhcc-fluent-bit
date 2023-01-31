@@ -44,7 +44,7 @@ jobs:
           raw,ubi9
 
     - name: Build the production image
-      uses: docker/build-push-action@v3
+      uses: docker/build-push-action@v4
       with:
         file: ./calyptia/ubi/Dockerfile
         context: ./calyptia/ubi/
