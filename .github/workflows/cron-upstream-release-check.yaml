@@ -22,7 +22,7 @@ jobs:
           repo: fluent-bit
           excludes: prerelease, draft
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Get the current versions
         # Look for the default line in the Dockerfile
@@ -46,7 +46,7 @@ jobs:
           echo "${{ needs.get-versions.outputs.new-version }} != ${{ needs.get-versions.outputs.old-version }}"
         shell: bash
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Run update version script
         run: |
